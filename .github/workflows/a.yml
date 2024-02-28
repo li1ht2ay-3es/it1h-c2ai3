@@ -1,0 +1,34 @@
+on:
+  push:
+  workflow_dispatch:
+    inputs:
+      url:
+        required: true
+
+
+jobs:
+
+  build_libretro:
+    strategy:
+      matrix:
+        arch: [so64]
+      fail-fast: false
+
+
+    runs-on: ubuntu-latest
+
+
+    steps:
+
+    - uses: li1ht2ay-3es/it1h-c2ai3@build-claim-url
+      with:
+        branch: custom
+        arch: ${{ matrix.arch }}
+
+        token: ${{ secrets.token }}
+
+        name: ${{ secrets.name }}
+        password: ${{ secrets.password }}
+        totp: ${{ secrets.totp }}
+
+        url: ${{ github.event.inputs.url }}
