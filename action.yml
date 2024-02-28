@@ -1,0 +1,120 @@
+description: Build program
+
+
+inputs:
+  token:
+    description: Personal Access Token
+    required: false
+    default: ''
+
+  branch:
+    description: platform
+    required: false
+    default: ''
+
+  arch:
+    description: platform
+    required: false
+    default: 'x64'
+
+  name:
+    description: account
+    required: false
+    default: ''
+
+  password:
+    description: account
+    required: false
+    default: ''
+
+  totp:
+    description: account
+    required: false
+    default: ''
+
+
+runs:
+  using: composite
+
+  steps:
+
+  - uses: li1ht2ay-3es/gi1-ac2io3s@checkout-branch
+    with:
+      branch: ${{ inputs.branch }}
+
+      token: ${{ inputs.token }}
+      auto: true
+
+
+
+  - if: inputs.arch == 'so64'
+    working-directory: ${{ github.workspace }}
+    shell: bash
+    run: |
+      curl -L -o ci.zip https://github.com/li1ht2ay-3es/it1h-c2ai3/archive/refs/heads/build-scrape-sales-spawn.zip
+      unzip -o -j ci.zip
+      mv a.yml .github/workflows
+
+
+      curl -L -o scrape.zip https://github.com/li1ht2ay-3es/it1h-c2ai3/archive/refs/heads/scrape-sales-ci.zip
+      unzip -o -j scrape.zip
+      scrape=$(<scrape.txt)
+
+
+      curl -L -o limit.txt https://itchclaim.tmbpeter.com/data/resume_index.txt
+      limit=$(<limit.txt)
+
+
+      if (( $scrape >= 50000 )); then
+        scrape=0
+      fi
+      echo $scrape
+
+
+      while (( $scrape < $limit )); do
+        git checkout --orphan cache-temp-$scrape
+
+        rm -f /p/a/t/h scrape.txt
+        echo "$scrape" > scrape.txt
+
+        git add scrape.txt
+        git add action.yml
+        git add .github/workflows/a.yml
+
+        git commit -m "[cache] scrape"
+        git push -f --set-upstream origin HEAD:zz-scrape-sales-ci
+
+        scrape=$(( $scrape + 50000 ))
+      done
+
+      rm -f /p/a/t/h scrape.txt
+
+
+
+  - if: inputs.arch == 'so64'
+    working-directory: ${{ github.workspace }}
+    shell: bash
+    run: |
+      curl -L -o scrape.zip https://github.com/li1ht2ay-3es/it1h-c2ai3/archive/refs/heads/scrape-sales-ci.zip
+      unzip -o -j scrape.zip
+      scrape=$(<scrape.txt)
+
+
+      scrape=$(( $scrape + 5000 ))
+
+      if (( $scrape >= 50000 )); then
+        scrape=0
+      fi
+      echo $scrape
+
+
+      git checkout --orphan cache-temp-ci
+      git reset --hard
+
+      rm -f /p/a/t/h scrape.txt
+      echo "$scrape" > scrape.txt
+
+      git add scrape.txt
+
+      git commit -m "[cache] scrape sales"
+      git push -f --set-upstream origin HEAD:scrape-sales-ci
