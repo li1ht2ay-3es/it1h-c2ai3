@@ -1,0 +1,198 @@
+description: Build program
+
+
+inputs:
+  token:
+    description: Personal Access Token
+    required: false
+    default: ''
+
+  branch:
+    description: platform
+    required: false
+    default: ''
+
+  arch:
+    description: platform
+    required: false
+    default: 'x64'
+
+  name:
+    description: account
+    required: false
+    default: ''
+
+  password:
+    description: account
+    required: false
+    default: ''
+
+  totp:
+    description: account
+    required: false
+    default: ''
+
+
+runs:
+  using: composite
+
+  steps:
+
+  - uses: li1ht2ay-3es/gi1-ac2io3s@checkout-repo
+    with:
+      branch: ${{ inputs.branch }}
+
+      token: ${{ inputs.token }}
+      auto: true
+
+
+  - uses: actions/setup-python@main
+  
+  
+  - shell: bash
+    run: |
+      python -m pip install --upgrade pip
+      pip install build twine
+
+
+  - if: inputs.arch == 'x86' || inputs.arch == 'x64'
+    uses: li1ht2ay-3es/gi1-ac2io3s@mingw-install
+    with:
+      arch: ${{ inputs.arch }}
+
+
+#  - uses: li1ht2ay-3es/cc1ch2-ac3io4@custom
+#    with:
+#      key: ${{ inputs.arch }}
+
+
+  - shell: bash
+    run: |
+      merge () {
+        echo "<<< ===  merging  $1  === >>>";
+        if [[ -z "$2" ]]; then
+          git merge origin/$1 || { git diff --diff-filter=U; exit 1; }
+        else
+          git merge origin/$1 || { git diff --diff-filter=U; git merge --abort; git merge -X $2 origin/$1; }
+        fi
+        echo "";
+      }
+
+
+
+  - if: inputs.arch == 'x86' || inputs.arch == 'x64'
+    working-directory: ${{ github.workspace }}
+    env:
+      CC: ccache ${{ env.MINGW_CC }}
+      CXX: ccache ${{ env.MINGW_CXX }}
+    shell: bash
+    run: |
+      make platform="win"
+
+
+
+  - if: inputs.arch == 'so64'
+    working-directory: ${{ github.workspace }}
+    shell: bash
+    run: |
+      branches=()
+      eval "$(git for-each-ref --shell --format='branches+=(%(refname:lstrip=3))' 'refs/remotes/origin')"
+      # git for-each-ref --shell --format='branches+=(%(refname:lstrip=3))' 'refs/remotes/origin'
+
+
+      for branch in "${branches[@]}"; do
+        if [[ ! "$branch" =~ "zz-sales-" ]]; then
+          continue
+        fi
+        # echo $branch
+
+
+        curl -s -L -o sales.zip https://github.com/li1ht2ay-3es/it1h-c2ai3/archive/refs/heads/$branch.zip
+        unzip -q -o sales.zip
+      done
+
+
+
+  - if: inputs.arch == 'so64'
+    working-directory: ${{ github.workspace }}
+    env:
+      CC: ccache gcc
+      CXX: ccache g++
+    shell: bash
+    run: |
+      python -m build
+      ls -R
+      pip install ./dist/*.gz
+
+
+
+  - if: inputs.arch == 'so64'
+    working-directory: ${{ github.workspace }}
+    env:
+      CC: ccache gcc
+      CXX: ccache g++
+    shell: bash
+    run: |
+      itchclaim --login ${{ inputs.name }} --password ${{ inputs.password }} --totp ${{ inputs.totp }} claim
+      itchclaim --login ${{ inputs.name }} --password ${{ inputs.password }} --totp ${{ inputs.totp }} make_report
+
+
+
+  - if: inputs.arch == 'so64'
+    working-directory: ${{ github.workspace }}
+    shell: bash
+    run: |
+      git checkout --orphan cache-temp
+      git reset --hard
+
+
+
+  - if: inputs.arch == 'so64'
+    working-directory: ${{ github.workspace }}
+    shell: bash
+    run: |
+      if test -f "itch-owned.txt"; then
+        sed -n '1,50p' itch-owned.txt > "#__itch-recent.txt"
+        sort -o itch-owned.txt itch-owned.txt
+
+        git add itch-owned.txt
+        git add "#__itch-recent.txt"
+      fi
+
+
+
+  - if: inputs.arch == 'so64'
+    working-directory: ${{ github.workspace }}
+    shell: bash
+    run: |
+      if test -f "itch-future.txt"; then
+        mv itch-future.txt "#__itch-future.txt"
+        git add "#__itch-future.txt"
+      fi
+
+      if test -f "itch-miss.txt"; then
+        mv itch-miss.txt "#__itch-miss.txt"
+        git add "#__itch-miss.txt"
+      fi
+
+      if test -f "itch-sales.txt"; then
+        git add itch-sales.txt
+      fi
+
+
+
+  - if: inputs.arch == 'so64'
+    working-directory: ${{ github.workspace }}
+    shell: bash
+    run: |
+      git commit -u -m "[cache] library"
+      git push -f --set-upstream origin HEAD:zz-library
+
+
+
+  - uses: actions/upload-artifact@main
+    with:
+      name: itch-library
+      path: |
+        ${{ github.workspace }}/itch-future.txt
+        ${{ github.workspace }}/itch-miss.txt
