@@ -671,11 +671,9 @@ class ItchClaim:
                 }
 
                 r = self._send_web('user_post', url + '/rate?source=game&game_id=' + str(game.id), data)
-                if r.status_code == 200:
+                if 'errors' in r.text:
                     continue
 
-                # 'Rate this'
-                # print(r.status_code)
                 # print(r.text)
                 print('Success!', flush=True)
                 return
