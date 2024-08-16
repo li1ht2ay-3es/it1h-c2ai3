@@ -669,9 +669,14 @@ class ItchClaim:
                     'csrf_token': self.user.csrf_token,
                     'game_rating': '5'
                 }
+
                 r = self._send_web('user_post', url + '/rate?source=game&game_id=' + str(game.id), data)
-                print(r.status_code)
-                print(r.text)
+                if r.status_code == 200:
+                    continue
+
+                # 'Rate this'
+                # print(r.status_code)
+                # print(r.text)
                 print('Success!', flush=True)
                 return
 
