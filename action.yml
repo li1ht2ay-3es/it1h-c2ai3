@@ -166,8 +166,7 @@ runs:
     shell: bash
     run: |
       if test -f "itch-future.txt"; then
-        mv itch-future.txt "#__itch-future.txt"
-        git add "#__itch-future.txt"
+        git add "itch-future.txt"
       fi
 
       if test -f "itch-miss.txt"; then
