@@ -239,23 +239,27 @@ class ItchClaim:
                 return True
         return False
 
-    def _send_web(self, type: str, url: str, payload = None):
+    def _send_web(self, type: str, url: str, redirect = True, payload = None):
         timer = 10
 
         count = 0
         while True:
             sleep(25/1000)
 
+# r = requests.get('http://github.com', allow_redirects=False)
+# 301
+# print(r.status_code, r.headers['Location'])
+
             try:
                 if type == 'get':
-                    r = requests.get(url, data=payload, timeout=timer)
+                    r = requests.get(url, data=payload, timeout=timer, allow_redirects=redirects)
                 if type == 'post':
-                    r = requests.post(url, data=payload, timeout=timer)
+                    r = requests.post(url, data=payload, timeout=timer, allow_redirects=redirects)
 
                 if type == 'user_get':
-                    r = self.user.s.get(url, data=payload, timeout=timer)
+                    r = self.user.s.get(url, data=payload, timeout=timer, allow_redirects=redirects)
                 if type == 'user_post':
-                    r = self.user.s.post(url, data=payload, timeout=timer)
+                    r = self.user.s.post(url, data=payload, timeout=timer, allow_redirects=redirects)
 
                 r.encoding = 'utf-8'
             except requests.RequestException as err:
@@ -265,6 +269,8 @@ class ItchClaim:
             if r.status_code == 200:  # OK
                 break
             if r.status_code == 404:  # Not found
+                break
+            if r.status_code == 301:  # Redirect
                 break
             if r.status_code == 429:  # Too many requests
                 sleep(25/1000)
@@ -359,7 +365,7 @@ class ItchClaim:
                     raise Exception("No claim box") 
 
                 claim_url = claim_box.find('form')['action']
-                r = self._send_web('user_post', claim_url, {'csrf_token': self.user.csrf_token})
+                r = self._send_web('user_post', claim_url, True, {'csrf_token': self.user.csrf_token})
                 if r.url == 'https://itch.io/':
                     raise Exception(r.text)
 
@@ -403,13 +409,112 @@ class ItchClaim:
 
         while page_count < scrape_step:
             try:
-                if page_count >= scrape_limit:
-                    break
-
                 page_count += 1
                 scrape_page += 1
 
+                if page_count >= scrape_limit:
+                    break
+
+# r = requests.get('http://github.com', allow_redirects=False)
+# 301
+# print(r.status_code, r.headers['Location'])
+
                 url = f"https://itch.io/s/{scrape_page}"
+                r = self._send_web('get', url)
+
+                if r.text.find('This sale ended') != -1:
+                    continue
+
+                if r.text.find('100%</strong> off') == -1:
+                    continue
+
+                sale_url = url
+                print(sale_url, flush=True)
+
+                future_sale = False
+                if r.text.find('class="not_active_notification">Come back') != -1:
+                    print('Future sale', flush=True)
+                    future_sale = True
+
+                idx = 0
+                debug_sale = 0
+                debug_miss = 0
+
+                while True:
+                    idx = r.text.find('class="game_cell_data"', idx)
+                    if idx == -1:
+                        break
+                    idx += 1
+
+                    url = self._substr(r.text[idx:], 'href="', '"')
+                    print(url, flush=True)
+
+                    if not self._find_game(active_games, url) and not self._find_game(future_games, url):
+                        print('Missing sale ' + url, flush=True)
+                        with open('itch-sales.txt', 'a') as myfile:
+                            if debug_sale == 0:
+                                debug_sale = 1
+                                print(sale_url, file=myfile, flush=True)  # Python 3.x
+                            print(url, file=myfile, flush=True)  # Python 3.x
+
+
+                    if not self._owns_game(url):
+                        if future_sale:
+                            print('Must claim later ' + url, flush=True)
+                            with open('itch-future.txt', 'a') as myfile:
+                                if debug_miss == 0:
+                                    debug_miss = 1
+                                    print(sale_url, file=myfile, flush=True)  # Python 3.x
+                                print(url, file=myfile, flush=True)  # Python 3.x
+                        else:
+                            game: ItchGame = ItchGame.from_api(url)
+                            self.user.claim_game(game)
+
+                            if not self._owns_game(url):
+                                print('Not claimable ' + url, flush=True)
+                                with open('itch-miss.txt', 'a') as myfile:
+                                    if debug_miss == 0:
+                                        debug_miss = 1
+                                        print(sale_url, file=myfile, flush=True)  # Python 3.x
+                                    print(url, file=myfile, flush=True)  # Python 3.x
+
+            except Exception as err:
+                print('Failure while checking ' + url + ' = ' + str(err), flush=True)
+
+
+    def scrape_future_sales(self):
+        """Claim all unowned games. Requires login.
+        Args:
+            url (str): The URL to download the file from"""
+
+        if self.user is None:
+            print('You must be logged in', flush=True)
+            return
+        if len(self.user.owned_games) == 0:
+            print('User\'s library not found in cache. Downloading it now', flush=True)
+            self.user.reload_owned_games()
+            self.user.save_session()
+
+        r = self._send_web('get', 'https://itchclaim.tmbpeter.com/data/resume_index.txt')
+        scrape_limit = int(r.text)
+
+        print(f'Scraping {scrape_page} ...', flush=True)
+
+        scrape_page -= 1
+        r = None
+        url = 'None'
+
+        while True:
+            try:
+                scrape_page += 1
+
+                url = f"https://itch.io/s/{scrape_page}"
+                r = self._send_web('get', url, False)
+
+                if r.status_code == 400:
+                    break
+
+
                 r = self._send_web('get', url)
 
                 if r.text.find('This sale ended') != -1:
@@ -670,13 +775,13 @@ class ItchClaim:
                     'game_rating': '5'
                 }
 
-                r = self._send_web('user_post', url + '/rate?source=game&game_id=' + str(game.id), data)
+                r = self._send_web('user_post', url + '/rate?source=game&game_id=' + str(game.id), True, data)
                 if 'errors' in r.text:
                     continue
 
                 # print(r.text)
                 print('Success!', flush=True)
-                return
+                # return
 
             except Exception as err:
                 print('Failure to rate ' + url + ' = ' + str(err), flush=True)
