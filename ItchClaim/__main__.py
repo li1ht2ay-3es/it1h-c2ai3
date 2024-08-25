@@ -252,14 +252,14 @@ class ItchClaim:
 
             try:
                 if type == 'get':
-                    r = requests.get(url, data=payload, timeout=timer, allow_redirects=redirects)
+                    r = requests.get(url, data=payload, timeout=timer, allow_redirects=redirect)
                 if type == 'post':
-                    r = requests.post(url, data=payload, timeout=timer, allow_redirects=redirects)
+                    r = requests.post(url, data=payload, timeout=timer, allow_redirects=redirect)
 
                 if type == 'user_get':
-                    r = self.user.s.get(url, data=payload, timeout=timer, allow_redirects=redirects)
+                    r = self.user.s.get(url, data=payload, timeout=timer, allow_redirects=redirect)
                 if type == 'user_post':
-                    r = self.user.s.post(url, data=payload, timeout=timer, allow_redirects=redirects)
+                    r = self.user.s.post(url, data=payload, timeout=timer, allow_redirects=redirect)
 
                 r.encoding = 'utf-8'
             except requests.RequestException as err:
