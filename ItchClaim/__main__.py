@@ -246,6 +246,16 @@ class ItchClaim:
 
 
 
+    def _dump_log(self, filename: str, mylist):
+        if len(mylist) == 0:
+            return
+
+        with open(filename, 'w') as myfile:
+            for line in mylist:
+                print(line, file=myfile)  # Python 3.x
+
+
+
     def _send_web(self, type: str, url: str, redirect = True, payload = None):
         timer = 10
 
@@ -403,6 +413,7 @@ class ItchClaim:
             self.user.reload_owned_games()
             self.user.save_session()
 
+
         active_games = DiskManager.download_from_remote_cache('https://itchclaim.tmbpeter.com/api/active.json')
         future_games = DiskManager.download_from_remote_cache('https://itchclaim.tmbpeter.com/api/upcoming.json')
 
@@ -416,13 +427,16 @@ class ItchClaim:
             scrape_limit = int(r.text)
 
 
-        self.sales_list = set()  # holds lines already seen
+        sales_list = []
+        miss_log = []
+        future_log = []
+        sales_log = []
 
 
         try:
             myfile = open('sales-url.txt', 'r')
             for sales_url in myfile.read().splitlines():
-                self.sales_list.add(sales_url)
+                sales_list.add(sales_url)
 
         except Exception as err:
             print('Failure reading ' + 'sales-url.txt' + ' = ' + str(err), flush=True)
@@ -445,7 +459,7 @@ class ItchClaim:
                     break
 
 
-                if page_count >= len(self.sales_list):
+                if page_count >= len(sales_list):
                     url = f"https://itch.io/s/{scrape_page}"
                     r = self._send_web('get', url, False)
 
@@ -453,12 +467,10 @@ class ItchClaim:
                         continue
 
                     url = r.headers['Location']
-
-                    with open('sales-url.txt', 'a') as myfile:
-                        print(url, file=myfile, flush=True)  # Python 3.x
+                    sales_url.add(url)
 
                 else:
-                    url = self.sales_list[page_count-1]
+                    url = sales_list[page_count-1]
 
 
                 r = self._send_web('get', url)
@@ -477,6 +489,7 @@ class ItchClaim:
                     print('Future sale', flush=True)
                     future_sale = True
 
+
                 idx = 0
                 debug_sale = 0
                 debug_miss = 0
@@ -487,40 +500,52 @@ class ItchClaim:
                         break
                     idx += 1
 
+
                     url = self._substr(r.text[idx:], 'href="', '"')
                     print(url, flush=True)
 
                     if not self._find_game(active_games, url) and not self._find_game(future_games, url):
                         print('Missing sale ' + url, flush=True)
-                        with open('itch-sales.txt', 'a') as myfile:
-                            if debug_sale == 0:
-                                debug_sale = 1
-                                print(sale_url, file=myfile, flush=True)  # Python 3.x
-                            print(url, file=myfile, flush=True)  # Python 3.x
+
+                        if debug_sale == 0:
+                            debug_sale = 1
+                            sales_log.add(sale_url)
+
+                        sales_log.add(url)
 
 
                     if not self._owns_game(url):
                         if future_sale:
                             print('Must claim later ' + url, flush=True)
-                            with open('itch-future.txt', 'a') as myfile:
-                                if debug_miss == 0:
-                                    debug_miss = 1
-                                    print(sale_url, file=myfile, flush=True)  # Python 3.x
-                                print(url, file=myfile, flush=True)  # Python 3.x
+
+                            if debug_miss == 0:
+                                debug_miss = 1
+                                future_log.add(sale_url)
+
+                            future_log.add(url)
+
                         else:
                             game: ItchGame = ItchGame.from_api(url)
                             self.user.claim_game(game)
 
                             if not self._owns_game(url):
                                 print('Not claimable ' + url, flush=True)
-                                with open('itch-miss.txt', 'a') as myfile:
-                                    if debug_miss == 0:
-                                        debug_miss = 1
-                                        print(sale_url, file=myfile, flush=True)  # Python 3.x
-                                    print(url, file=myfile, flush=True)  # Python 3.x
+
+                                if debug_miss == 0:
+                                    debug_miss = 1
+                                    miss_log.add(sale_url)
+
+                                miss_log.add(url)
 
             except Exception as err:
                 print('Failure while checking ' + url + ' = ' + str(err), flush=True)
+
+
+        self._dump_log('itch-miss.txt', miss_log)
+        self._dump_log('itch-future.txt', future_log)
+        self._dump_log('itch-sales.txt', sales_log)
+
+        self._dump_log('sales-url.txt', sales_list)
 
 
 
