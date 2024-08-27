@@ -213,11 +213,14 @@ class ItchClaim:
                 totp = os.getenv('ITCH_TOTP')
             self.user.login(password, totp)
 
+
+
     def _find_game(self, games_list, url):
         for game in games_list:
             if game.url == url:
                 return True
         return False
+
 
 
     def _substr(self, str: str, pat1: str, pat2: str):
@@ -233,11 +236,15 @@ class ItchClaim:
 
         return str[idx1:idx2]
 
+
+
     def _owns_game(self, url: str):
         for owned_url in [owned_game.url for owned_game in self.user.owned_games]:
             if owned_url == url:
                 return True
         return False
+
+
 
     def _send_web(self, type: str, url: str, redirect = True, payload = None):
         timer = 10
@@ -266,6 +273,7 @@ class ItchClaim:
                 print(err, flush=True)
                 # pass
 
+
             if r.status_code == 200:  # OK
                 break
             if r.status_code == 404:  # Not found
@@ -276,6 +284,7 @@ class ItchClaim:
                 sleep(25/1000)
                 continue
 
+
             count += 1
             if count == 20:
                 print('Too many attempts. Aborting\n\n', flush=True)
@@ -283,6 +292,7 @@ class ItchClaim:
                 print(r.text, flush=True)
                 exit(1)
         return r
+
 
 
     def _claim_game(self, game: ItchGame):
@@ -301,6 +311,7 @@ class ItchClaim:
             print(f"ERROR: Failed to claim {game.url}     {resp['errors'][0]}", flush=True)
             return
 
+
         download_url = json.loads(r.text)['url']
         r = self.s.get(download_url)
         r.encoding = 'utf-8'
@@ -309,6 +320,7 @@ class ItchClaim:
         if claim_box == None:
             print(f"{game.url} is not claimable", flush=True)
             return
+
 
         claim_url = claim_box.find('form')['action']
         r = self.s.post(claim_url,
@@ -354,6 +366,7 @@ class ItchClaim:
                 if item['available'] != True:
                     continue
 
+
                 r = self._send_web('user_post', game.url + '/download_url?csrf_token=' + self.user.csrf_token + '&reward_id=' + str(item['id']))
 
                 download_url = json.loads(r.text)['url']
@@ -376,6 +389,7 @@ class ItchClaim:
             print('[_claim_reward] Failure while claiming ' + game.url + ' = ' + str(err), flush=True)
 
 
+
     def scrape_sales(self, scrape_page = -1, scrape_limit = -1, scrape_step = 5000):
         """Claim all unowned games. Requires login.
         Args:
@@ -392,6 +406,7 @@ class ItchClaim:
         active_games = DiskManager.download_from_remote_cache('https://itchclaim.tmbpeter.com/api/active.json')
         future_games = DiskManager.download_from_remote_cache('https://itchclaim.tmbpeter.com/api/upcoming.json')
 
+
         if scrape_page == -1:
             r = self._send_web('get', 'https://raw.githubusercontent.com/li1ht2ay-3es/it1h-c2ai3/scrape-sales-ci/scrape.txt')
             scrape_page = int(r.text)
@@ -400,12 +415,23 @@ class ItchClaim:
             r = self._send_web('get', 'https://itchclaim.tmbpeter.com/data/resume_index.txt')
             scrape_limit = int(r.text)
 
+
+        myfile = open('sales-url.txt', 'r')
+        for sales_url in myfile.read().splitlines():
+            try:
+                self.sales_list.add(sales_url)
+
+            except Exception as err:
+                print('Failure while adding ' + sales_url + ' = ' + str(err), flush=True)
+
+
         print(f'Scraping {scrape_page} ...', flush=True)
 
         scrape_page -= 1
         page_count = 0
         r = None
         url = 'None'
+
 
         while page_count < scrape_step:
             try:
@@ -415,11 +441,23 @@ class ItchClaim:
                 if page_count >= scrape_limit:
                     break
 
-# r = requests.get('http://github.com', allow_redirects=False)
-# 301
-# print(r.status_code, r.headers['Location'])
 
-                url = f"https://itch.io/s/{scrape_page}"
+                if page_count >= len(sales_list):
+                    url = f"https://itch.io/s/{scrape_page}"
+                    r = self._send_web('get', url, False)
+
+                    if r.status_code == 400:
+                        continue
+
+                    url = r.headers['Location']
+
+                    with open('sales-url.txt', 'a') as myfile:
+                        print(url, file=myfile, flush=True)  # Python 3.x
+
+                else:
+                    url = sales_list[page_count-1]
+
+
                 r = self._send_web('get', url)
 
                 if r.text.find('This sale ended') != -1:
@@ -480,6 +518,7 @@ class ItchClaim:
 
             except Exception as err:
                 print('Failure while checking ' + url + ' = ' + str(err), flush=True)
+
 
 
     def scrape_future_sales(self):
@@ -498,6 +537,7 @@ class ItchClaim:
         r = self._send_web('get', 'https://itchclaim.tmbpeter.com/data/resume_index.txt')
         scrape_limit = int(r.text)
 
+
         print(f'Scraping {scrape_page} ...', flush=True)
 
         scrape_page -= 1
@@ -513,6 +553,11 @@ class ItchClaim:
 
                 if r.status_code == 400:
                     break
+
+
+# r = requests.get('http://github.com', allow_redirects=False)
+# 301
+# print(r.status_code, r.headers['Location'])
 
 
                 r = self._send_web('get', url)
@@ -575,6 +620,7 @@ class ItchClaim:
 
             except Exception as err:
                 print('Failure while checking ' + url + ' = ' + str(err), flush=True)
+
 
 
     def _scrape_profile(self, url, main = True):
@@ -607,6 +653,7 @@ class ItchClaim:
 
         except Exception as err:
             print('[_scrape_profile] Failure while checking ' + url + ' = ' + str(err), flush=True)
+
 
 
     def scrape_rewards(self, url: str = 'https://itchclaim.tmbpeter.com/api/active.json'):
@@ -711,6 +758,7 @@ class ItchClaim:
                 print(line, file=myfile)  # Python 3.x
 
 
+
     def auto_rating(self, url: str = 'https://itchclaim.tmbpeter.com/api/active.json'):
         """Rate one game. Requires login.
         Args:
@@ -785,6 +833,7 @@ class ItchClaim:
 
             except Exception as err:
                 print('Failure to rate ' + url + ' = ' + str(err), flush=True)
+
 
 
     def make_report(self, url: str = 'https://itchclaim.tmbpeter.com/api/active.json'):
@@ -932,6 +981,7 @@ class ItchClaim:
             _create_report(url, active_sales, 'itch-sales.txt', False, False)
 
 
+
     def claim_url(self, url: str = 'https://itchclaim.tmbpeter.com/api/active.json'):
         """Claim one game. Requires login.
         Args:
@@ -954,6 +1004,7 @@ class ItchClaim:
         game: ItchGame = ItchGame.from_api(url)
         self.user.claim_game(game)
         self.user.claim_reward(game)
+
 
 
 # pylint: disable=missing-function-docstring
