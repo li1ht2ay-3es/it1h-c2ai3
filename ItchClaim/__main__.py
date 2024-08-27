@@ -416,10 +416,13 @@ class ItchClaim:
             scrape_limit = int(r.text)
 
 
+        self.sales_list = set()  # holds lines already seen
+
+
         try:
             myfile = open('sales-url.txt', 'r')
             for sales_url in myfile.read().splitlines():
-                sales_list.add(sales_url)
+                self.sales_list.add(sales_url)
 
         except Exception as err:
             print('Failure reading ' + 'sales-url.txt' + ' = ' + str(err), flush=True)
@@ -442,7 +445,7 @@ class ItchClaim:
                     break
 
 
-                if page_count >= len(sales_list):
+                if page_count >= len(self.sales_list):
                     url = f"https://itch.io/s/{scrape_page}"
                     r = self._send_web('get', url, False)
 
@@ -455,7 +458,7 @@ class ItchClaim:
                         print(url, file=myfile, flush=True)  # Python 3.x
 
                 else:
-                    url = sales_list[page_count-1]
+                    url = self.sales_list[page_count-1]
 
 
                 r = self._send_web('get', url)
