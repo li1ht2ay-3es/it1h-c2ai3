@@ -153,6 +153,11 @@ runs:
         flag=1
       fi
 
+      if test -f "sales-url.txt"; then
+        git add sales-url.txt
+        flag=1
+      fi
+
 
       if (( $flag == 1 )); then
         git commit -m "[cache] sales"
