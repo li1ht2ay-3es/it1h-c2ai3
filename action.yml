@@ -111,11 +111,11 @@ runs:
       CXX: ccache g++
     shell: bash
     run: |
-      itchclaim --login ${{ inputs.name }} --password ${{ inputs.password }} --totp ${{ inputs.totp }} auto_rating
-      sleep 30s
+      # itchclaim --login ${{ inputs.name }} --password ${{ inputs.password }} --totp ${{ inputs.totp }} auto_rating
+      # sleep 30s
 
-      itchclaim --login ${{ inputs.name }} --password ${{ inputs.password }} --totp ${{ inputs.totp }} auto_rating
-      sleep 45s
+      # itchclaim --login ${{ inputs.name }} --password ${{ inputs.password }} --totp ${{ inputs.totp }} auto_rating
+      # sleep 45s
 
       itchclaim --login ${{ inputs.name }} --password ${{ inputs.password }} --totp ${{ inputs.totp }} auto_rating
 
