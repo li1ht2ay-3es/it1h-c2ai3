@@ -509,9 +509,9 @@ class ItchClaim:
 
                         if debug_sale == 0:
                             debug_sale = 1
-                            sales_log.add(sale_url)
+                            sales_log.append(sale_url)
 
-                        sales_log.add(url)
+                        sales_log.append(url)
 
 
                     if not self._owns_game(url):
@@ -520,9 +520,9 @@ class ItchClaim:
 
                             if debug_miss == 0:
                                 debug_miss = 1
-                                future_log.add(sale_url)
+                                future_log.append(sale_url)
 
-                            future_log.add(url)
+                            future_log.append(url)
 
                         else:
                             game: ItchGame = ItchGame.from_api(url)
@@ -533,9 +533,9 @@ class ItchClaim:
 
                                 if debug_miss == 0:
                                     debug_miss = 1
-                                    miss_log.add(sale_url)
+                                    miss_log.append(sale_url)
 
-                                miss_log.add(url)
+                                miss_log.append(url)
 
             except Exception as err:
                 print('Failure while checking ' + url + ' = ' + str(err), flush=True)
