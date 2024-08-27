@@ -419,7 +419,7 @@ class ItchClaim:
         try:
             myfile = open('sales-url.txt', 'r')
             for sales_url in myfile.read().splitlines():
-                self.sales_list.add(sales_url)
+                sales_list.add(sales_url)
 
         except Exception as err:
             print('Failure reading ' + 'sales-url.txt' + ' = ' + str(err), flush=True)
