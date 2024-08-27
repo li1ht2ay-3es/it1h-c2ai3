@@ -467,7 +467,7 @@ class ItchClaim:
                         continue
 
                     url = r.headers['Location']
-                    sales_url.add(url)
+                    sales_list.add(url)
 
                 else:
                     url = sales_list[page_count-1]
