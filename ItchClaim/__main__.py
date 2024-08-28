@@ -223,8 +223,8 @@ class ItchClaim:
 
 
 
-    def _substr(self, str: str, pat1: str, pat2: str):
-        idx1 = str.find(pat1)
+    def _substr(self, str: str, idx0, pat1: str, pat2: str):
+        idx1 = str.find(pat1, idx0)
         if idx1 == -1:
             return None
 
@@ -415,8 +415,17 @@ class ItchClaim:
             self.user.save_session()
 
 
-        active_games = DiskManager.download_from_remote_cache('https://itchclaim.tmbpeter.com/api/active.json')
-        future_games = DiskManager.download_from_remote_cache('https://itchclaim.tmbpeter.com/api/upcoming.json')
+        active_db = DiskManager.download_from_remote_cache('https://itchclaim.tmbpeter.com/api/active.json')
+        future_db = DiskManager.download_from_remote_cache('https://itchclaim.tmbpeter.com/api/upcoming.json')
+
+        active_list = set()  # sorted, faster
+        future_list = set()
+
+        for game in active_db:
+            active_list.add(game.url)
+
+        for game in future_db:
+            future_list.add(game.url)
 
 
         if scrape_page == -1:
@@ -428,18 +437,19 @@ class ItchClaim:
             scrape_limit = int(r.text)
 
 
-        sales_list = []
-        miss_log = []
+        sales_list = set()
+
+        miss_log = []  # must be ordered list
         future_log = []
         sales_log = []
 
 
         try:
-            # r = self._send_web('get', 'https://raw.githubusercontent.com/li1ht2ay-3es/it1h-c2ai3/scrape-sales-ci/scrape.txt')
-            # scrape_page = int(r.text)
+            r = self._send_web('get', 'https://raw.githubusercontent.com/li1ht2ay-3es/it1h-c2ai3/zz-sales-' + str(scrape_page) + '/sales-url.txt')
+            if r.status_code == 400:
+                break
 
-            myfile = open('sales-url.txt', 'r')
-            for sales_url in myfile.read().splitlines():
+            for sales_url in r.text.splitlines():
                 sales_list.add(sales_url)
 
         except Exception as err:
@@ -479,17 +489,18 @@ class ItchClaim:
 
                 r = self._send_web('get', url)
 
-                if r.text.find('This sale ended') != -1:
+                if 'This sale ended' in r.text:
                     continue
 
-                if r.text.find('100%</strong> off') == -1:
+                if '100%</strong> off' not in r.text:
                     continue
 
                 sale_url = url
                 print(sale_url, flush=True)
 
+
                 future_sale = False
-                if r.text.find('class="not_active_notification">Come back') != -1:
+                if 'class="not_active_notification">Come back' in r.text:
                     print('Future sale', flush=True)
                     future_sale = True
 
@@ -505,10 +516,10 @@ class ItchClaim:
                     idx += 1
 
 
-                    url = self._substr(r.text[idx:], 'href="', '"')
+                    url = self._substr(r.text, idx, 'href="', '"')
                     print(url, flush=True)
 
-                    if not self._find_game(active_games, url) and not self._find_game(future_games, url):
+                    if url not in active_list and url not in future_list:
                         print('Missing sale ' + url, flush=True)
 
                         if debug_sale == 0:
@@ -618,7 +629,7 @@ class ItchClaim:
                         break
                     idx += 1
 
-                    url = self._substr(r.text[idx:], 'href="', '"')
+                    url = self._substr(r.text, idx, 'href="', '"')
                     print(url, flush=True)
 
                     if not self._find_game(active_games, url) and not self._find_game(future_games, url):
@@ -660,7 +671,7 @@ class ItchClaim:
             # print(url, flush=True)
 
             if main == False:
-                url = self._substr(url, 'https://', '.itch.io')
+                url = self._substr(url, 0, 'https://', '.itch.io')
                 url = 'https://itch.io/profile/' + url
 
             r = self._send_web('get', url)
@@ -673,7 +684,7 @@ class ItchClaim:
                 str_index = str1+1
 
                 game = ItchGame(-1)
-                game.url = self._substr(r.text[str1:], 'href="', '"')
+                game.url = self._substr(r.text, str1, 'href="', '"')
                 if self._owns_game(game.url):
                     continue
 
@@ -757,7 +768,7 @@ class ItchClaim:
                             break
                         str_index = str1+1
 
-                        new_author = self._substr(dat['content'][str1:], 'href="https://', '.itch.io')
+                        new_author = self._substr(dat['content'], str1, 'href="https://', '.itch.io')
                         new_profile = 'https://' + new_author + '.itch.io'
 
 
@@ -930,8 +941,8 @@ class ItchClaim:
 
                             r = self._send_web('get', line)
                             if r.status_code == 200:
-                                item.start = self._substr(r.text, '"start_date":"', '"')
-                                item.end = self._substr(r.text, '"end_date":"', '"')
+                                item.start = self._substr(r.text, 0, '"start_date":"', '"')
+                                item.end = self._substr(r.text, item.start, '"end_date":"', '"')
                             continue
 
 
