@@ -408,6 +408,7 @@ class ItchClaim:
         if self.user is None:
             print('You must be logged in', flush=True)
             return
+
         if len(self.user.owned_games) == 0:
             print('User\'s library not found in cache. Downloading it now', flush=True)
             self.user.reload_owned_games()
@@ -434,6 +435,9 @@ class ItchClaim:
 
 
         try:
+            # r = self._send_web('get', 'https://raw.githubusercontent.com/li1ht2ay-3es/it1h-c2ai3/scrape-sales-ci/scrape.txt')
+            # scrape_page = int(r.text)
+
             myfile = open('sales-url.txt', 'r')
             for sales_url in myfile.read().splitlines():
                 sales_list.add(sales_url)
