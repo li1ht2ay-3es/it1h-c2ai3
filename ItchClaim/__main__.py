@@ -238,14 +238,6 @@ class ItchClaim:
 
 
 
-    def _owns_game(self, url: str):
-        for owned_url in [owned_game.url for owned_game in self.user.owned_games]:
-            if owned_url == url:
-                return True
-        return False
-
-
-
     def _dump_log(self, filename: str, mylist):
         if len(mylist) == 0:
             return
@@ -346,6 +338,7 @@ class ItchClaim:
             print(f"Successfully claimed {game.url}", flush=True)
 
 
+
     def _claim_reward(self, game: ItchGame):
         self.valid_reward = False
 
@@ -394,6 +387,42 @@ class ItchClaim:
 
         except Exception as err:
             print('[_claim_reward] Failure while claiming ' + game.url + ' = ' + str(err), flush=True)
+
+
+
+    def _scrape_profile(self, url, main = True):
+        try:
+            # print(url, flush=True)
+
+            if main == False:
+                url = self._substr(url, 0, 'https://', '.itch.io')
+                url = 'https://itch.io/profile/' + url
+
+            r = self._send_web('get', url)
+
+
+            str_index = 0
+            while True:
+                str1 = r.text.find('class="game_cell has_cover lazy_images"', str_index)
+                if str1 == -1:
+                    break
+                str_index = str1+1
+
+
+                game = ItchGame(-1)
+                game.url = self._substr(r.text, str1, 'href="', '"')
+                if game.url in self.owned_list:
+                    continue
+
+
+                # print(game.url + '  #', flush=True)
+                self._claim_reward(game)
+
+                if self.valid_reward == False:
+                    self.ignore_list.add(game.url)
+
+        except Exception as err:
+            print('[_scrape_profile] Failure while checking ' + url + ' = ' + str(err), flush=True)
 
 
 
@@ -579,6 +608,12 @@ class ItchClaim:
         scrape_limit = int(r.text)
 
 
+        owned_list = set()  # fast hashing
+
+        for game_url in [owned_game.url for owned_game in self.user.owned_games]:
+            owned_list.add(game_url)
+
+
         print(f'Scraping {scrape_page} ...', flush=True)
 
         scrape_page -= 1
@@ -639,7 +674,7 @@ class ItchClaim:
                             print(url, file=myfile, flush=True)  # Python 3.x
 
 
-                    if not self._owns_game(url):
+                    if url not in owned_list:
                         if future_sale:
                             print('Must claim later ' + url, flush=True)
                             with open('itch-future.txt', 'a') as myfile:
@@ -651,7 +686,7 @@ class ItchClaim:
                             game: ItchGame = ItchGame.from_api(url)
                             self.user.claim_game(game)
 
-                            if not self._owns_game(url):
+                            if url not in owned_list:
                                 print('Not claimable ' + url, flush=True)
                                 with open('itch-miss.txt', 'a') as myfile:
                                     if debug_miss == 0:
@@ -661,39 +696,6 @@ class ItchClaim:
 
             except Exception as err:
                 print('Failure while checking ' + url + ' = ' + str(err), flush=True)
-
-
-
-    def _scrape_profile(self, url, main = True):
-        try:
-            # print(url, flush=True)
-
-            if main == False:
-                url = self._substr(url, 0, 'https://', '.itch.io')
-                url = 'https://itch.io/profile/' + url
-
-            r = self._send_web('get', url)
-
-            str_index = 0
-            while True:
-                str1 = r.text.find('class="game_cell has_cover lazy_images"', str_index)
-                if str1 == -1:
-                    break
-                str_index = str1+1
-
-                game = ItchGame(-1)
-                game.url = self._substr(r.text, str1, 'href="', '"')
-                if self._owns_game(game.url):
-                    continue
-
-                # print(game.url + '  #', flush=True)
-                self._claim_reward(game)
-
-                if self.valid_reward == False:
-                    self.ignore_list.add(game.url)
-
-        except Exception as err:
-            print('[_scrape_profile] Failure while checking ' + url + ' = ' + str(err), flush=True)
 
 
 
@@ -713,8 +715,10 @@ class ItchClaim:
             self.user.save_session()
 
 
-        self.active_list = set()  # holds lines already seen
+        self.active_list = set()  # fast hashing
         self.ignore_list = set()
+        self.owned_list = set()
+
         self.valid_reward = False
 
 
@@ -722,6 +726,8 @@ class ItchClaim:
         for rewards_url in myfile.readlines():
             self.ignore_list.add(rewards_url)
 
+        for game_url in [owned_game.url for owned_game in self.user.owned_games]:
+            self.owned_list.add(game_url)
 
 
         print(f'Scraping rewards ...', flush=True)
