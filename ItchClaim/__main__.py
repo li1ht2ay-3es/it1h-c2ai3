@@ -913,6 +913,7 @@ class ItchClaim:
                 with open(my_file, 'r') as myfile:
                     for line in my_file.read_text().splitlines():
                         if line.find('itch.io/s/') != -1:
+                            continue
                             sale_url = line
 
                             if item.id != None:
@@ -927,7 +928,7 @@ class ItchClaim:
                             continue
 
 
-                        if check == True and self._owns_game(line):
+                        if check == True and line in self.owned_items:
                             continue
 
 
@@ -946,6 +947,7 @@ class ItchClaim:
                             continue
 
 
+                        continue
                         if item.id == None:
                             item.id = sale_url
                             print(sale_url, flush=True)
@@ -953,6 +955,7 @@ class ItchClaim:
                         item.list.append(line)
                         print(line, flush=True)
 
+                    continue
                     if item.id != None:
                         _sale_add(list, item, order)
 
