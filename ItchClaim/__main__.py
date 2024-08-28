@@ -293,7 +293,7 @@ class ItchClaim:
 
 
             count += 1
-            if count == 20:
+            if count == 100:
                 print('Too many attempts. Aborting\n\n', flush=True)
                 print(r.status_code, flush=True)
                 print(r.text, flush=True)
