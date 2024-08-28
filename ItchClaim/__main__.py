@@ -261,11 +261,7 @@ class ItchClaim:
 
         count = 0
         while True:
-            sleep(10/1000)
-
-# r = requests.get('http://github.com', allow_redirects=False)
-# 301
-# print(r.status_code, r.headers['Location'])
+            sleep(1/1000)
 
             try:
                 if type == 'get':
@@ -279,6 +275,7 @@ class ItchClaim:
                     r = self.user.s.post(url, data=payload, timeout=timer, allow_redirects=redirect)
 
                 r.encoding = 'utf-8'
+
             except requests.RequestException as err:
                 print(err, flush=True)
                 # pass
