@@ -446,11 +446,10 @@ class ItchClaim:
 
         try:
             r = self._send_web('get', 'https://raw.githubusercontent.com/li1ht2ay-3es/it1h-c2ai3/zz-sales-' + str(scrape_page) + '/sales-url.txt')
-            if r.status_code == 400:
-                break
 
-            for sales_url in r.text.splitlines():
-                sales_list.add(sales_url)
+            if r.status_code == 200:
+                for sales_url in r.text.splitlines():
+                    sales_list.add(sales_url)
 
         except Exception as err:
             print('Failure reading ' + 'sales-url.txt' + ' = ' + str(err), flush=True)
