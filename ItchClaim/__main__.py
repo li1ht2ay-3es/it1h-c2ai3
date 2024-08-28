@@ -415,11 +415,12 @@ class ItchClaim:
             self.user.save_session()
 
 
+        active_list = set()  # hashed, faster lookup
+        future_list = set()
+
+
         active_db = DiskManager.download_from_remote_cache('https://itchclaim.tmbpeter.com/api/active.json')
         future_db = DiskManager.download_from_remote_cache('https://itchclaim.tmbpeter.com/api/upcoming.json')
-
-        active_list = set()  # sorted, faster
-        future_list = set()
 
         for game in active_db:
             active_list.add(game.url)
@@ -432,16 +433,11 @@ class ItchClaim:
             r = self._send_web('get', 'https://raw.githubusercontent.com/li1ht2ay-3es/it1h-c2ai3/scrape-sales-ci/scrape.txt')
             scrape_page = int(r.text)
 
-        if scrape_limit == -1:
-            r = self._send_web('get', 'https://itchclaim.tmbpeter.com/data/resume_index.txt')
-            scrape_limit = int(r.text)
 
-
-        sales_list = set()
-
-        miss_log = []  # must be ordered list
+        miss_log = []  # list = not for searching, indexing
         future_log = []
         sales_log = []
+        sales_list = []
 
 
         try:
@@ -449,7 +445,7 @@ class ItchClaim:
 
             if r.status_code == 200:
                 for sales_url in r.text.splitlines():
-                    sales_list.add(sales_url)
+                    sales_list.append(sales_url)
 
         except Exception as err:
             print('Failure reading ' + 'sales-url.txt' + ' = ' + str(err), flush=True)
@@ -457,33 +453,30 @@ class ItchClaim:
 
         print(f'Scraping {scrape_page} ...', flush=True)
 
-        scrape_page -= 1
+
         page_count = 0
-        r = None
-        url = 'None'
+        if scrape_page == 0:
+            page_count = 1
+            scrape_page = 1
 
 
         while page_count < scrape_step:
             try:
-                page_count += 1
-                scrape_page += 1
+                if page_count < len(sales_list):
+                    url = sales_list[page_count]
 
-                if page_count >= scrape_limit:
-                    break
-
-
-                if page_count >= len(sales_list):
+                else:
                     url = f"https://itch.io/s/{scrape_page}"
                     r = self._send_web('get', url, False)
 
                     if r.status_code == 400:
-                        continue
+                        break
 
                     url = r.headers['Location']
-                    sales_list.add(url)
+                    sales_list.append(url)
 
-                else:
-                    url = sales_list[page_count-1]
+                page_count += 1
+                scrape_page += 1
 
 
                 r = self._send_web('get', url)
