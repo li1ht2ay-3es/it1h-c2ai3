@@ -474,10 +474,7 @@ class ItchClaim:
                     if r.status_code == 400:
                         break
 
-                    if 'Location' not in r.headers:
-                        url = None
-
-                    else:
+                    if 'Location' in r.headers:
                         url = r.headers['Location']
                         sales_list.append(url)
 
