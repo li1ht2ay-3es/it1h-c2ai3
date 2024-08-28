@@ -430,6 +430,10 @@ class ItchClaim:
             owned_list.add(game_url)
 
 
+        if scrape_limit == -1:
+            r = self._send_web('get', 'http://itchclaim.tmbpeter.com/data/resume_index.txt')
+            scrape_limit = int(r.text)
+
         if scrape_page == -1:
             r = self._send_web('get', 'https://raw.githubusercontent.com/li1ht2ay-3es/it1h-c2ai3/scrape-sales-ci/scrape.txt')
             scrape_page = int(r.text)
@@ -462,7 +466,7 @@ class ItchClaim:
             scrape_page = 1
 
 
-        while page_count < scrape_step:
+        while page_count < scrape_step and scrape_page < scrape_limit:
             try:
                 if page_count < len(sales_list):
                     url = sales_list[page_count]
@@ -471,12 +475,10 @@ class ItchClaim:
                     url = f"https://itch.io/s/{scrape_page}"
                     r = self._send_web('get', url, False)
 
-                    if r.status_code == 400:
-                        break
-
                     if 'Location' in r.headers:
                         url = r.headers['Location']
-                        sales_list.append(url)
+
+                    sales_list.append(url)
 
                 page_count += 1
                 scrape_page += 1
