@@ -417,6 +417,7 @@ class ItchClaim:
 
         active_list = set()  # hashed, faster lookup
         future_list = set()
+        owned_list = set()
 
 
         active_db = DiskManager.download_from_remote_cache('https://itchclaim.tmbpeter.com/api/active.json')
@@ -428,13 +429,16 @@ class ItchClaim:
         for game in future_db:
             future_list.add(game.url)
 
+        for game_url in [owned_game.url for owned_game in self.user.owned_games]:
+            owned_list.add(game_url)
+
 
         if scrape_page == -1:
             r = self._send_web('get', 'https://raw.githubusercontent.com/li1ht2ay-3es/it1h-c2ai3/scrape-sales-ci/scrape.txt')
             scrape_page = int(r.text)
 
 
-        miss_log = []  # list = not for searching, indexing
+        miss_log = []  # not for searching
         future_log = []
         sales_log = []
         sales_list = []
@@ -455,7 +459,8 @@ class ItchClaim:
 
 
         page_count = 0
-        if scrape_page == 0:
+
+        if scrape_page == 0:  # sale 0 = n/a
             page_count = 1
             scrape_page = 1
 
@@ -511,6 +516,7 @@ class ItchClaim:
                     url = self._substr(r.text, idx, 'href="', '"')
                     print(url, flush=True)
 
+
                     if url not in active_list and url not in future_list:
                         print('Missing sale ' + url, flush=True)
 
@@ -521,7 +527,7 @@ class ItchClaim:
                         sales_log.append(url)
 
 
-                    if not self._owns_game(url):
+                    if url not in owned_list:
                         if future_sale:
                             print('Must claim later ' + url, flush=True)
 
@@ -535,7 +541,7 @@ class ItchClaim:
                             game: ItchGame = ItchGame.from_api(url)
                             self.user.claim_game(game)
 
-                            if not self._owns_game(url):
+                            if url not in owned_list:
                                 print('Not claimable ' + url, flush=True)
 
                                 if debug_miss == 0:
