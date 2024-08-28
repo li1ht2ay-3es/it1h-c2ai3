@@ -215,6 +215,37 @@ class ItchClaim:
 
 
 
+    def _login(self):
+        if self.user is None:
+            print('You must be logged in', flush=True)
+            return
+
+        if len(self.user.owned_games) == 0:
+            print('User\'s library not found in cache. Downloading it now', flush=True)
+            self.user.reload_owned_games()
+            self.user.save_session()
+
+
+        self.active_sales = set()  # hashed, faster lookup
+        self.future_sales = set()
+        self.owned_items = set()
+
+
+        active_db = DiskManager.download_from_remote_cache('https://itchclaim.tmbpeter.com/api/active.json')
+        future_db = DiskManager.download_from_remote_cache('https://itchclaim.tmbpeter.com/api/upcoming.json')
+
+
+        for game in active_db:
+            self.active_sales.add(game.url)
+
+        for game in future_db:
+            self.future_sales.add(game.url)
+
+        for game_url in [owned_game.url for owned_game in self.user.owned_games]:
+            self.owned_items.add(game_url)
+
+
+
     def _substr(self, str: str, idx0, pat1: str, pat2: str):
         idx1 = str.find(pat1, idx0)
         if idx1 == -1:
@@ -269,21 +300,16 @@ class ItchClaim:
 
             if r.status_code == 200:  # OK
                 break
-            if r.status_code == 404:  # Not found
-                break
             if r.status_code == 301:  # Redirect
+                break
+            if r.status_code == 404:  # Not found
                 break
             if r.status_code == 429:  # Too many requests
                 sleep(10/1000)
                 continue
+            if r.status_code >= 500:  # Server error
+                break
 
-
-            count += 1
-            if count == 100:
-                print('Too many attempts. Aborting\n\n', flush=True)
-                print(r.status_code, flush=True)
-                print(r.text, flush=True)
-                exit(1)
         return r
 
 
@@ -407,7 +433,7 @@ class ItchClaim:
 
                 game = ItchGame(-1)
                 game.url = self._substr(r.text, str1, 'href="', '"')
-                if game.url in self.owned_list:
+                if game.url in self.owned_items:
                     continue
 
 
@@ -427,32 +453,7 @@ class ItchClaim:
         Args:
             url (str): The URL to download the file from"""
 
-        if self.user is None:
-            print('You must be logged in', flush=True)
-            return
-
-        if len(self.user.owned_games) == 0:
-            print('User\'s library not found in cache. Downloading it now', flush=True)
-            self.user.reload_owned_games()
-            self.user.save_session()
-
-
-        active_list = set()  # hashed, faster lookup
-        future_list = set()
-        owned_list = set()
-
-
-        active_db = DiskManager.download_from_remote_cache('https://itchclaim.tmbpeter.com/api/active.json')
-        future_db = DiskManager.download_from_remote_cache('https://itchclaim.tmbpeter.com/api/upcoming.json')
-
-        for game in active_db:
-            active_list.add(game.url)
-
-        for game in future_db:
-            future_list.add(game.url)
-
-        for game_url in [owned_game.url for owned_game in self.user.owned_games]:
-            owned_list.add(game_url)
+        self._login()
 
 
         if scrape_limit == -1:
@@ -542,7 +543,7 @@ class ItchClaim:
                     print(url, flush=True)
 
 
-                    if url not in active_list and url not in future_list:
+                    if url not in self.active_sales and url not in self.future_sales:
                         print('Missing sale ' + url, flush=True)
 
                         if debug_sale == 0:
@@ -552,7 +553,7 @@ class ItchClaim:
                         sales_log.append(url)
 
 
-                    if url not in owned_list:
+                    if url not in self.owned_items:
                         if future_sale:
                             print('Must claim later ' + url, flush=True)
 
@@ -566,7 +567,7 @@ class ItchClaim:
                             game: ItchGame = ItchGame.from_api(url)
                             self.user.claim_game(game)
 
-                            if url not in owned_list:
+                            if url not in self.owned_items:
                                 print('Not claimable ' + url, flush=True)
 
                                 if debug_miss == 0:
@@ -592,23 +593,11 @@ class ItchClaim:
         Args:
             url (str): The URL to download the file from"""
 
-        if self.user is None:
-            print('You must be logged in', flush=True)
-            return
-        if len(self.user.owned_games) == 0:
-            print('User\'s library not found in cache. Downloading it now', flush=True)
-            self.user.reload_owned_games()
-            self.user.save_session()
+        self._login()
+
 
         r = self._send_web('get', 'https://itchclaim.tmbpeter.com/data/resume_index.txt')
         scrape_limit = int(r.text)
-
-
-        owned_list = set()  # fast hashing
-
-
-        for game_url in [owned_game.url for owned_game in self.user.owned_games]:
-            owned_list.add(game_url)
 
 
         print(f'Scraping {scrape_page} ...', flush=True)
@@ -671,7 +660,7 @@ class ItchClaim:
                             print(url, file=myfile, flush=True)  # Python 3.x
 
 
-                    if url not in owned_list:
+                    if url not in self.owned_items:
                         if future_sale:
                             print('Must claim later ' + url, flush=True)
                             with open('itch-future.txt', 'a') as myfile:
@@ -683,7 +672,7 @@ class ItchClaim:
                             game: ItchGame = ItchGame.from_api(url)
                             self.user.claim_game(game)
 
-                            if url not in owned_list:
+                            if url not in self.owned_items:
                                 print('Not claimable ' + url, flush=True)
                                 with open('itch-miss.txt', 'a') as myfile:
                                     if debug_miss == 0:
@@ -703,28 +692,19 @@ class ItchClaim:
             # https://www.google.com/search?q=%2B%22itch.io%22+%2B%22free+community+Copy%22
             # https://www.google.com/search?q=itch.io+%22community+copies%22
 
-        if self.user is None:
-            print('You must be logged in', flush=True)
-            return
-        if len(self.user.owned_games) == 0:
-            print('User\'s library not found in cache. Downloading it now', flush=True)
-            self.user.reload_owned_games()
-            self.user.save_session()
+
+        self._login()
 
 
-        self.active_list = set()  # fast hashing
-        self.ignore_list = set()
-        self.owned_list = set()
-
+        self.ignore_list = set()  # faster hashing
+        self.active_list = set()
+        
         self.valid_reward = False
 
 
         myfile = open('scrape-ignore.txt', 'r')
         for rewards_url in myfile.readlines():
             self.ignore_list.add(rewards_url)
-
-        for game_url in [owned_game.url for owned_game in self.user.owned_games]:
-            self.owned_list.add(game_url)
 
 
         print(f'Scraping rewards ...', flush=True)
@@ -983,21 +963,10 @@ class ItchClaim:
                 print('Failed to check ' + url + '/' + file + ' = ' + str(err), flush=True)
 
 
-
-        if self.user is None:
-            print('You must be logged in', flush=True)
-            return
-
-        if len(self.user.owned_games) == 0:
-            print('User\'s library not found in cache. Downloading it now', flush=True)
-            self.user.reload_owned_games()
-            self.user.save_session()
+        self._login()
 
         r = self._send_web('get', 'https://itchclaim.tmbpeter.com/data/resume_index.txt')
         scrape_limit = int(r.text)
-
-        known_sales = DiskManager.download_from_remote_cache('https://itchclaim.tmbpeter.com/api/active.json')
-        # known2_sales = DiskManager.download_from_remote_cache('https://itchclaim.tmbpeter.com/api/future.json')
 
 
         with open('itch-owned.txt', 'w') as myfile:
@@ -1007,9 +976,9 @@ class ItchClaim:
                 print(f'{game.name:60s} {game.url:50s}', file=myfile, flush=True)  # Python 3.x
 
 
-        active_sales = []
-        miss_sales = []
-        future_sales = []
+        active_list = []
+        miss_list = []
+        future_list = []
 
         # print(os.listdir())
 
@@ -1020,9 +989,9 @@ class ItchClaim:
             page += 5000
             url = 'it1h-c2ai3-zz-sales-' + str(page)
 
-            _create_report(url, future_sales, 'itch-future.txt', True, True)
-            _create_report(url, miss_sales, 'itch-miss.txt', True, False)
-            _create_report(url, active_sales, 'itch-sales.txt', False, False)
+            _create_report(url, future_list, 'itch-future.txt', True, True)
+            _create_report(url, miss_list, 'itch-miss.txt', True, False)
+            _create_report(url, active_list, 'itch-sales.txt', False, False)
 
 
 
