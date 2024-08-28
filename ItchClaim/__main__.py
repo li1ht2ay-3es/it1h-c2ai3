@@ -215,14 +215,6 @@ class ItchClaim:
 
 
 
-    def _find_game(self, games_list, url):
-        for game in games_list:
-            if game.url == url:
-                return True
-        return False
-
-
-
     def _substr(self, str: str, idx0, pat1: str, pat2: str):
         idx1 = str.find(pat1, idx0)
         if idx1 == -1:
@@ -261,10 +253,12 @@ class ItchClaim:
                 if type == 'post':
                     r = requests.post(url, data=payload, timeout=timer, allow_redirects=redirect)
 
+
                 if type == 'user_get':
                     r = self.user.s.get(url, data=payload, timeout=timer, allow_redirects=redirect)
                 if type == 'user_post':
                     r = self.user.s.post(url, data=payload, timeout=timer, allow_redirects=redirect)
+
 
                 r.encoding = 'utf-8'
 
@@ -302,6 +296,7 @@ class ItchClaim:
         except:
             print(f"ERROR: Failed to check {game.url}", flush=True)
             return
+
         if 'errors' in resp:
             if resp['errors'][0] in ('invalid game', 'invalid user'):
                 if game.check_redirect_url():
@@ -333,6 +328,7 @@ class ItchClaim:
                 print(f"{game.url} has already been claimed", flush=True)
                 return
             print(f"ERROR: Unknown failure to claim {game.url}", flush=True)
+
         else:
             self.owned_games.append(game)
             print(f"Successfully claimed {game.url}", flush=True)
@@ -610,6 +606,7 @@ class ItchClaim:
 
         owned_list = set()  # fast hashing
 
+
         for game_url in [owned_game.url for owned_game in self.user.owned_games]:
             owned_list.add(game_url)
 
@@ -665,7 +662,7 @@ class ItchClaim:
                     url = self._substr(r.text, idx, 'href="', '"')
                     print(url, flush=True)
 
-                    if not self._find_game(active_games, url) and not self._find_game(future_games, url):
+                    if url not in active_games and url not in future_games:
                         print('Missing sale ' + url, flush=True)
                         with open('itch-sales.txt', 'a') as myfile:
                             if debug_sale == 0:
