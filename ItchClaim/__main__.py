@@ -261,7 +261,7 @@ class ItchClaim:
 
         count = 0
         while True:
-            sleep(25/1000)
+            sleep(10/1000)
 
 # r = requests.get('http://github.com', allow_redirects=False)
 # 301
@@ -291,7 +291,7 @@ class ItchClaim:
             if r.status_code == 301:  # Redirect
                 break
             if r.status_code == 429:  # Too many requests
-                sleep(25/1000)
+                sleep(10/1000)
                 continue
 
 
