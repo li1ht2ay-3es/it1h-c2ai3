@@ -956,7 +956,7 @@ class ItchClaim:
 
             with open(my_file, 'w') as myfile:
                 for item in list:
-                    print(f"{item.id:50s} {item.start:25s} {item.end:25s}", file=myfile)  # Python 3.x
+                    print(f"{str(item.id):50s} {str(item.start):25s} {str(item.end):25s}", file=myfile)  # Python 3.x
                     for game in item.list:
                         print(game, file=myfile)  # Python 3.x
 
