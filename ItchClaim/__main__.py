@@ -950,7 +950,7 @@ class ItchClaim:
                             item.id = sale_url
                             print(sale_url, flush=True)
 
-                        item.list.append(line)
+                        # item.list.append(line)
                         print(line, flush=True)
 
 
