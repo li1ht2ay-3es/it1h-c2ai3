@@ -947,11 +947,11 @@ class ItchClaim:
                 print('Failed to check ' + url + '/' + file + ' = ' + str(err), flush=True)
 
 
-        def _print_report(self, list, file):
+        def _print_report(self, list, name):
             if len(list) == 0:
                 return
 
-            my_file = Path(file)
+            my_file = Path(name)
 
             with open(my_file, 'w') as myfile:
                 for item in list:
