@@ -656,8 +656,8 @@ class ItchClaim:
                         with open('itch-sales.txt', 'a') as myfile:
                             if debug_sale == 0:
                                 debug_sale = 1
-                                print(sale_url, file=myfile, flush=True)  # Python 3.x
-                            print(url, file=myfile, flush=True)  # Python 3.x
+                                print(sale_url, file=myfile)  # Python 3.x
+                            print(url, file=myfile)  # Python 3.x
 
 
                     if url not in self.owned_items:
@@ -666,8 +666,8 @@ class ItchClaim:
                             with open('itch-future.txt', 'a') as myfile:
                                 if debug_miss == 0:
                                     debug_miss = 1
-                                    print(sale_url, file=myfile, flush=True)  # Python 3.x
-                                print(url, file=myfile, flush=True)  # Python 3.x
+                                    print(sale_url, file=myfile)  # Python 3.x
+                                print(url, file=myfile)  # Python 3.x
                         else:
                             game: ItchGame = ItchGame.from_api(url)
                             self.user.claim_game(game)
@@ -677,8 +677,8 @@ class ItchClaim:
                                 with open('itch-miss.txt', 'a') as myfile:
                                     if debug_miss == 0:
                                         debug_miss = 1
-                                        print(sale_url, file=myfile, flush=True)  # Python 3.x
-                                    print(url, file=myfile, flush=True)  # Python 3.x
+                                        print(sale_url, file=myfile)  # Python 3.x
+                                    print(url, file=myfile)  # Python 3.x
 
             except Exception as err:
                 print('Failure while checking ' + url + ' = ' + str(err), flush=True)
@@ -892,9 +892,9 @@ class ItchClaim:
 
                 with open(my_file, 'w') as myfile:
                     for item in list:
-                        print(f"{item.id:50s} {item.start:25s} {item.end:25s}", file=myfile, flush=True)  # Python 3.x
+                        print(f"{item.id:50s} {item.start:25s} {item.end:25s}", file=myfile)  # Python 3.x
                         for game in item.list:
-                            print(game, file=myfile, flush=True)  # Python 3.x
+                            print(game, file=myfile)  # Python 3.x
 
             except Exception as err:
                 print('Failed to check ' + file + ' = ' + str(err), flush=True)
@@ -950,15 +950,15 @@ class ItchClaim:
                             item.id = sale_url
                             print(sale_url, flush=True)
 
-                        item.list.append(line)
+                        # item.list.append(line)
                         print(line, flush=True)
 
 
-#                    if item.id != None:
-#                        _sale_add(list, item, order)
+                    if item.id != None:
+                        _sale_add(list, item, order)
 
-#                    if len(list) > 0:
-#                        _write_report(list, file)
+                    if len(list) > 0:
+                        _write_report(list, file)
 
             except Exception as err:
                 print('Failed to check ' + url + '/' + file + ' = ' + str(err), flush=True)
@@ -974,7 +974,7 @@ class ItchClaim:
             for game in self.user.owned_games:
                 if game.url == None:
                     continue
-                print(f'{game.name:60s} {game.url:50s}', file=myfile, flush=True)  # Python 3.x
+                print(f'{game.name:60s} {game.url:50s}', file=myfile)  # Python 3.x
 
 
         active_list = []
