@@ -913,13 +913,13 @@ class ItchClaim:
                 with open(my_file, 'r') as myfile:
                     for line in my_file.read_text().splitlines():
                         if line.find('itch.io/s/') != -1:
-                            continue
                             sale_url = line
 
                             if item.id != None:
                                 _sale_add(list, item, order)
 
                             item = _sale_item()
+                            continue
 
                             r = self._send_web('get', line)
                             if r.status_code == 200:
