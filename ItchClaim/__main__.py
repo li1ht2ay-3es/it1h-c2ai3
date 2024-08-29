@@ -249,15 +249,15 @@ class ItchClaim:
     def _substr(self, str: str, idx0, pat1: str, pat2: str):
         idx1 = str.find(pat1, idx0)
         if idx1 == -1:
-            return None
+            return None, -1, -1
 
         idx1 += len(pat1)
         idx2 = str.find(pat2, idx1)
 
         if idx2 == -1:
-            return None
+            return None, -1, -1
 
-        return str[idx1:idx2]
+        return str[idx1:idx2], idx1, idx2
 
 
 
@@ -888,7 +888,6 @@ class ItchClaim:
 
         def _create_report(url, list, file, check, order):
             try:
-                print('_create_report')
                 item = _sale_item()
                 sale_url = None
 
@@ -897,15 +896,12 @@ class ItchClaim:
                 if not my_file.exists():
                     return
 
-                print(url)
                 with open(my_file, 'r') as myfile:
                     for line in my_file.read_text().splitlines():
-                        print(line)
                         if line.find('itch.io/s/') != -1:
                             sale_url = line
 
                             if item.id != None:
-                                print('_sale_add')
                                 _sale_add(list, item, order)
 
 
@@ -913,11 +909,8 @@ class ItchClaim:
 
                             r = self._send_web('get', line)
                             if r.status_code == 200:
-                                print('start + end')
-                                item.start = self._substr(r.text, 0, '"start_date":"', '"')
-                                print(item.start)
-                                item.end = self._substr(r.text, item.start, '"end_date":"', '"')
-                                print(item.end)
+                                item.start, idx2 = self._substr(r.text, 0, '"start_date":"', '"')
+                                item.end = self._substr(r.text, idx2, '"end_date":"', '"')
                             continue
 
 
@@ -926,7 +919,6 @@ class ItchClaim:
 
 
                         r = self._send_web('get', line)
-                        print(r.text)
 
                         if r.status_code != 200:
                             continue
@@ -947,7 +939,6 @@ class ItchClaim:
 
                         print(line, flush=True)
                         item.list.append(line)
-                        print(item.list)
 
 
                     if item.id != None:
@@ -961,15 +952,13 @@ class ItchClaim:
             if len(list) == 0:
                 return
 
-            print('_print_report')
             my_file = Path(name)
 
             with open(my_file, 'w') as myfile:
                 for item in list:
                     print(f"{item.id:50s} {item.start:25s} {item.end:25s}", file=myfile)  # Python 3.x
-                    print(item.list)
-                    # for game in [for owned_game in item.list]:
-                        # print(game, file=myfile)  # Python 3.x
+                    for game in [for owned_game in item.list]:
+                        print(game, file=myfile)  # Python 3.x
 
 
 
