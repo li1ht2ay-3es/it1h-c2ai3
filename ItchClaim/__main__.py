@@ -947,7 +947,7 @@ class ItchClaim:
                 print('Failed to check ' + url + '/' + file + ' = ' + str(err), flush=True)
 
 
-        def _print_report(self, list, name):
+        def _print_report(list, name):
             if len(list) == 0:
                 return
 
