@@ -936,9 +936,9 @@ class ItchClaim:
                         if item.id == None:
                             sale_id = (self._substr(sale_url, 0, '/s/', '/'))[0]
                             item.id = 'https://itch.io/s/' + str(sale_id)
-                            # print(sale_url, flush=True)
+                            print(sale_url, flush=True)
 
-                        # print(line, flush=True)
+                        print(line, flush=True)
                         item.list.append(line)
 
 
