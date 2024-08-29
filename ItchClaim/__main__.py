@@ -950,12 +950,12 @@ class ItchClaim:
                             item.id = sale_url
                             print(sale_url, flush=True)
 
-                        # item.list.append(line)
+                        item.list.append(line)
                         print(line, flush=True)
 
 
-                    if item.id != None:
-                        _sale_add(list, item, order)
+#                    if item.id != None:
+#                        _sale_add(list, item, order)
 
                     if len(list) > 0:
                         _write_report(list, file)
