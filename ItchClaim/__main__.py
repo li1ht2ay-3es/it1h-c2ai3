@@ -946,7 +946,6 @@ class ItchClaim:
                             continue
 
 
-                        continue
                         if item.id == None:
                             item.id = sale_url
                             print(sale_url, flush=True)
