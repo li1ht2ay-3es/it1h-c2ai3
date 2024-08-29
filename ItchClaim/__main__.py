@@ -938,6 +938,7 @@ class ItchClaim:
                             print(sale_url, flush=True)
 
                         item.list.append(line)
+                        print(item.list)
                         print(line, flush=True)
 
 
