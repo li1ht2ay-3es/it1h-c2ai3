@@ -919,7 +919,6 @@ class ItchClaim:
                                 _sale_add(list, item, order)
 
                             item = _sale_item()
-                            continue
 
                             r = self._send_web('get', line)
                             if r.status_code == 200:
