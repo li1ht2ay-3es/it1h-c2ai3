@@ -886,20 +886,6 @@ class ItchClaim:
             list.insert(idx, item)
 
 
-        def _write_report(list, file):
-            try:
-                my_file = Path(file)
-
-                with open(my_file, 'w') as myfile:
-                    for item in list:
-                        print(f"{item.id:50s} {item.start:25s} {item.end:25s}", file=myfile)  # Python 3.x
-                        for game in item.list:
-                            print(game, file=myfile)  # Python 3.x
-
-            except Exception as err:
-                print('Failed to check ' + file + ' = ' + str(err), flush=True)
-
-
         def _create_report(url, list, file, check, order):
             try:
                 item = _sale_item()
@@ -957,8 +943,14 @@ class ItchClaim:
                     if item.id != None:
                         _sale_add(list, item, order)
 
-#                    if len(list) > 0:
-#                        _write_report(list, file)
+                    if len(list) > 0:
+                        my_file = Path(file)
+
+                        with open(my_file, 'w') as myfile:
+                            for item in list:
+                                print(f"{item.id:50s} {item.start:25s} {item.end:25s}", file=myfile)  # Python 3.x
+                                #for game in item.list:
+                                #    print(game, file=myfile)  # Python 3.x
 
             except Exception as err:
                 print('Failed to check ' + url + '/' + file + ' = ' + str(err), flush=True)
