@@ -909,8 +909,8 @@ class ItchClaim:
 
                             r = self._send_web('get', line)
                             if r.status_code == 200:
-                                item.start, idx1 = self._substr(r.text, 0, '"start_date":"', '"')
-                                item.end = (self._substr(r.text, idx1, '"end_date":"', '"'))[0]
+                                item.start = (self._substr(r.text, 0, '"start_date":"', '"'))[0]
+                                item.end = (self._substr(r.text, 0, '"end_date":"', '"'))[0]
                             continue
 
 
@@ -923,21 +923,22 @@ class ItchClaim:
                         if r.status_code != 200:
                             continue
 
-                        if r.text.find('A password is required to view this page') != -1:
+                        if 'A password is required to view this page' in r.text:
                             continue
 
-                        if r.text.find('<p>This asset pack is currently unavailable</p>') != -1:
+                        if '<p>This asset pack is currently unavailable</p>' in r.text:
                             continue
 
-                        if r.text.find('<p>This game is currently unavailable</p>') != -1:
+                        if '<p>This game is currently unavailable</p>' in r.text:
                             continue
 
 
                         if item.id == None:
-                            item.id = sale_url
-                            print(sale_url, flush=True)
+                            sale_id = (self._substr(sale_url, 0, '/s/', '/'))[0]
+                            item.id = 'https://itch.io/s/' + str(sale_id)
+                            # print(sale_url, flush=True)
 
-                        print(line, flush=True)
+                        # print(line, flush=True)
                         item.list.append(line)
 
 
