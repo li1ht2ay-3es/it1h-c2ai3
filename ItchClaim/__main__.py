@@ -905,6 +905,7 @@ class ItchClaim:
                             sale_url = line
 
                             if item.id != None:
+                                print('_sale_add')
                                 _sale_add(list, item, order)
 
 
@@ -912,8 +913,11 @@ class ItchClaim:
 
                             r = self._send_web('get', line)
                             if r.status_code == 200:
+                                print('start + end')
                                 item.start = self._substr(r.text, 0, '"start_date":"', '"')
+                                print(item.start)
                                 item.end = self._substr(r.text, item.start, '"end_date":"', '"')
+                                print(item.end)
                             continue
 
 
@@ -922,6 +926,7 @@ class ItchClaim:
 
 
                         r = self._send_web('get', line)
+                        print(r.text)
 
                         if r.status_code != 200:
                             continue
@@ -956,6 +961,7 @@ class ItchClaim:
             if len(list) == 0:
                 return
 
+            print('_print_report')
             my_file = Path(name)
 
             with open(my_file, 'w') as myfile:
