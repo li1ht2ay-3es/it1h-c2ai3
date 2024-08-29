@@ -417,7 +417,7 @@ class ItchClaim:
             # print(url, flush=True)
 
             if main == False:
-                url = self._substr(url, 0, 'https://', '.itch.io')[0]
+                url = (self._substr(url, 0, 'https://', '.itch.io'))[0]
                 url = 'https://itch.io/profile/' + url
 
             r = self._send_web('get', url)
@@ -432,7 +432,7 @@ class ItchClaim:
 
 
                 game = ItchGame(-1)
-                game.url = self._substr(r.text, str1, 'href="', '"')[0]
+                game.url = (self._substr(r.text, str1, 'href="', '"'))[0]
                 if game.url in self.owned_items:
                     continue
 
@@ -539,7 +539,7 @@ class ItchClaim:
                     idx += 1
 
 
-                    url = self._substr(r.text, idx, 'href="', '"')[0]
+                    url = (self._substr(r.text, idx, 'href="', '"'))[0]
                     print(url, flush=True)
 
 
@@ -648,7 +648,7 @@ class ItchClaim:
                         break
                     idx += 1
 
-                    url = self._substr(r.text, idx, 'href="', '"')[0]
+                    url = (self._substr(r.text, idx, 'href="', '"'))[0]
                     print(url, flush=True)
 
                     if url not in active_games and url not in future_games:
@@ -749,7 +749,7 @@ class ItchClaim:
                             break
                         str_index = str1+1
 
-                        new_author = self._substr(dat['content'], str1, 'href="https://', '.itch.io')[0]
+                        new_author = (self._substr(dat['content'], str1, 'href="https://', '.itch.io'))[0]
                         new_profile = 'https://' + new_author + '.itch.io'
 
 
@@ -910,7 +910,7 @@ class ItchClaim:
                             r = self._send_web('get', line)
                             if r.status_code == 200:
                                 item.start, idx1 = self._substr(r.text, 0, '"start_date":"', '"')
-                                item.end = self._substr(r.text, idx1, '"end_date":"', '"')[0]
+                                item.end = (self._substr(r.text, idx1, '"end_date":"', '"'))[0]
                             continue
 
 
