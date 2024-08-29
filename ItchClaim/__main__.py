@@ -888,6 +888,7 @@ class ItchClaim:
 
         def _create_report(url, list, file, check, order):
             try:
+                print('_create_report')
                 item = _sale_item()
                 sale_url = None
 
@@ -896,8 +897,10 @@ class ItchClaim:
                 if not my_file.exists():
                     return
 
+                print(url)
                 with open(my_file, 'r') as myfile:
                     for line in my_file.read_text().splitlines():
+                        print(line)
                         if line.find('itch.io/s/') != -1:
                             sale_url = line
 
@@ -937,9 +940,9 @@ class ItchClaim:
                             item.id = sale_url
                             print(sale_url, flush=True)
 
+                        print(line, flush=True)
                         item.list.append(line)
                         print(item.list)
-                        print(line, flush=True)
 
 
                     if item.id != None:
