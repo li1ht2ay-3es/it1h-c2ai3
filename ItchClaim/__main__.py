@@ -943,17 +943,22 @@ class ItchClaim:
                     if item.id != None:
                         _sale_add(list, item, order)
 
-                    if len(list) > 0:
-                        my_file = Path(file)
-
-                        with open(my_file, 'w') as myfile:
-                            for item in list:
-                                print(f"{item.id:50s} {item.start:25s} {item.end:25s}", file=myfile)  # Python 3.x
-                                #for game in item.list:
-                                #    print(game, file=myfile)  # Python 3.x
-
             except Exception as err:
                 print('Failed to check ' + url + '/' + file + ' = ' + str(err), flush=True)
+
+
+        def _print_report(self, list, file):
+            if len(list) == 0:
+                return
+
+            my_file = Path(file)
+
+            with open(my_file, 'w') as myfile:
+                for item in list:
+                    print(f"{item.id:50s} {item.start:25s} {item.end:25s}", file=myfile)  # Python 3.x
+                    for game in item.list:
+                        print(game, file=myfile)  # Python 3.x
+
 
 
         self._login()
@@ -985,6 +990,11 @@ class ItchClaim:
             _create_report(url, future_list, 'itch-future.txt', True, True)
             _create_report(url, miss_list, 'itch-miss.txt', True, False)
             _create_report(url, active_list, 'itch-sales.txt', False, False)
+
+
+        _print_report(future_list, 'itch-future.txt')
+        _print_report(miss_list, 'itch-miss.txt')
+        _print_report(active_list, 'itch-sales.txt')
 
 
 
