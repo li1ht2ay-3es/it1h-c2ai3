@@ -954,8 +954,8 @@ class ItchClaim:
                         print(line, flush=True)
 
 
-                    if item.id != None:
-                        _sale_add(list, item, order)
+#                    if item.id != None:
+#                        _sale_add(list, item, order)
 
 #                    if len(list) > 0:
 #                        _write_report(list, file)
