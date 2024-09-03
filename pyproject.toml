@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+[project]
+name = "ItchClaim"
+authors = [
+  { name="Smart123s" },
+]
+dynamic = ["dependencies", "version"]
+description = "Automatically claim free games from itch.io"
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+        'Development Status :: 4 - Beta',
+        'Environment :: Console',
+        'Intended Audience :: End Users/Desktop',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
+        'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3 :: Only',
+        'Topic :: Internet',
+]
+
+[project.urls]
+"Homepage" = "https://github.com/Smart123s/ItchClaim"
+"Bug Tracker" = "https://github.com/Smart123s/ItchClaim/issues"
+
+[project.scripts]
+itchclaim = "ItchClaim.__main__:main"
+
+[tool.setuptools]
+packages = ["ItchClaim"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+version = {attr = "ItchClaim.__init__.__version__"}
+
+[tool.setuptools.package-data]
+ItchClaim = ["*.html"]
